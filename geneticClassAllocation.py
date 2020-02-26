@@ -52,8 +52,11 @@ class Chromosome:
         out = ""
         for room in self.roomList:
             if(room.isEmpty == False):
-                out += "Room " + room.id + ": " + room.currentEvent.id + "\n"
-            
+                out += "Room " + room.id + " (" + str(room.capacity) + " people): " + room.currentEvent.id + " (" + str(room.currentEvent.numberPeople) + " people)"
+                if(room.capacity < room.currentEvent.numberPeople):
+                    out += " (*)"
+                out += "\n"
+                
         return out
     
     def mutate(self):
@@ -73,8 +76,8 @@ class Chromosome:
         
     def crossover(self, otherChromosome):
         
-        firstList = copy.copy(self.roomList)
-        secondList = copy.copy(otherChromosome.roomList)
+        firstList = copy.deepcopy(self.roomList)
+        secondList = copy.deepcopy(otherChromosome.roomList)
         
         firstList = sorted(firstList, key=lambda x:x.id)
         secondList = sorted(secondList, key=lambda x:x.id)
@@ -132,7 +135,7 @@ class Chromosome:
 
   
         
-mu = 0.2
+mu = 0.01
 chi = 0.5
 
 rooms = []
@@ -141,9 +144,10 @@ chromosomes = []
 
 totalPersons = 0
 count = 0
-maxChromosomes = 50
+maxChromosomes = 100
+numberEvents = 30
 
-for e in range(0, 10):
+for e in range(0, numberEvents):
     peopleEvent = randrange(1, 100)
     events.append(Event("EVENT"+str(e), "", peopleEvent))
     totalPersons += peopleEvent
@@ -159,20 +163,21 @@ while(evolution):
     count = count + 1
     sortedChromosomes = sorted(chromosomes, key=lambda x:x.fitness(), reverse = True)
     sortedChromosomes = sortedChromosomes[0:maxChromosomes]
-
+    
     toMutate = math.floor(mu*len(sortedChromosomes))
     toCrossover = math.floor(chi*len(sortedChromosomes)/2)*2
 
-    print("Generation " + str(count))
-    print(str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
+    print("Generation " + str(count) + ": " + str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
+    print(sortedChromosomes[0])
     
     if(sortedChromosomes[0].fitness() == totalPersons):
         evolution = False
 #    print(sortedChromosomes[0])
 #    print("=====================")
     
-    elite = sortedChromosomes[0:toCrossover]
-    worst = copy.copy(sortedChromosomes[(len(sortedChromosomes) - toMutate):])
+    elite = copy.deepcopy(sortedChromosomes)
+    elite = elite[0:toCrossover]
+    worst = copy.deepcopy(sortedChromosomes[(len(sortedChromosomes) - toMutate):])
         
     childs = []
     
@@ -195,10 +200,10 @@ while(evolution):
 #        print(sortedChromosomes[s].fitness())
         
     chromosomes = childs + sortedChromosomes + worst
-    
+#    
 #    print("==========00004============")
 #    for s in range(0, len(sortedChromosomes)):
 #        print(sortedChromosomes[s].fitness())
         
-#    if(count == 100):
+#    if(count == 1):
 #        evolution = False
