@@ -132,7 +132,7 @@ class Chromosome:
 
   
         
-mu = 0.5
+mu = 0.2
 chi = 0.5
 
 rooms = []
@@ -140,13 +140,15 @@ events = []
 chromosomes = []
 
 totalPersons = 0
+count = 0
+maxChromosomes = 50
 
 for e in range(0, 10):
     peopleEvent = randrange(1, 100)
     events.append(Event("EVENT"+str(e), "", peopleEvent))
     totalPersons += peopleEvent
 
-for k in range(0, 5):
+for k in range(0, maxChromosomes):
     chromosomes.append(Chromosome([]))
     chromosomes[k].fillRandom(events)
  
@@ -154,56 +156,49 @@ for k in range(0, 5):
 evolution = True
 
 while(evolution):
+    count = count + 1
     sortedChromosomes = sorted(chromosomes, key=lambda x:x.fitness(), reverse = True)
-    
-#    for s in range(0, len(sortedChromosomes)):
-#        print(sortedChromosomes[s].fitness())
-        
+    sortedChromosomes = sortedChromosomes[0:maxChromosomes]
+
     toMutate = math.floor(mu*len(sortedChromosomes))
     toCrossover = math.floor(chi*len(sortedChromosomes)/2)*2
 
-    print("Best solution so far:")
+    print("Generation " + str(count))
     print(str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
-    print(sortedChromosomes[0])
-    print("=====================")
-    
-    elite = sortedChromosomes[0:toCrossover]
-    worst = sortedChromosomes[toMutate:]
-        
-    childs = []
-    
-    for c in range(0, len(elite)-1):
-        childs.append(elite[c].crossover(elite[c+1]))
-            
-    for m in range(0, len(worst)):
-        worst[m].mutate()
-        
-    chromosomes = childs + sortedChromosomes
     
     if(sortedChromosomes[0].fitness() == totalPersons):
         evolution = False
-#room1 = Room("VS7", "Study room", 100, True)
-#event1 = Event("MAT001", "Math 001", 150)
-#room2 = Room("VS9", "Lecture room", 200, True)
-#event2 = Event("PHY001", "Physics 001", 10)
-#
-#room3 = Room("VS4", "Study room", 100, True)
-#event3 = Event("MAT002", "Math 001", 150)
-#room4 = Room("VS5", "Lecture room", 200, True)
-#event4 = Event("PHY005", "Physics 001", 10)
-
-#chromosome1 = Chromosome([])
-#chromosome1.addEventToRoom(event1, room1)
-#chromosome1.addEventToRoom(event2, room2)
-#chromosome1.addEventToRoom(event3, room3)
-#chromosome1.addEventToRoom(event4, room4)
-#
-#
-#chromosome2 = Chromosome([])
-#chromosome2.addEventToRoom(event1, room3)
-#chromosome2.addEventToRoom(event2, room4)
-#chromosome2.addEventToRoom(event3, room2)
-#chromosome2.addEventToRoom(event4, room1)
-
-#print(chromosome1.fitness())
-#print(chromosome2.fitness())
+#    print(sortedChromosomes[0])
+#    print("=====================")
+    
+    elite = sortedChromosomes[0:toCrossover]
+    worst = copy.copy(sortedChromosomes[(len(sortedChromosomes) - toMutate):])
+        
+    childs = []
+    
+#    print("==========00001============")
+#    for s in range(0, len(sortedChromosomes)):
+#        print(sortedChromosomes[s].fitness())
+    
+    for c in range(0, len(elite)-1):
+        childs.append(elite[c].crossover(elite[c+1]))
+       
+#    print("==========00002============")
+#    for s in range(0, len(sortedChromosomes)):
+#        print(sortedChromosomes[s].fitness())
+    
+    for m in range(0, len(worst)):
+        worst[m].mutate()
+        
+#    print("==========00003============")
+#    for s in range(0, len(sortedChromosomes)):
+#        print(sortedChromosomes[s].fitness())
+        
+    chromosomes = childs + sortedChromosomes + worst
+    
+#    print("==========00004============")
+#    for s in range(0, len(sortedChromosomes)):
+#        print(sortedChromosomes[s].fitness())
+        
+#    if(count == 100):
+#        evolution = False
