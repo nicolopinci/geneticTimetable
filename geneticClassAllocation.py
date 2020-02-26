@@ -135,7 +135,7 @@ class Chromosome:
 
   
         
-mu = 0.01
+mu = 0.2
 chi = 0.5
 
 rooms = []
@@ -172,8 +172,6 @@ while(evolution):
     
     if(sortedChromosomes[0].fitness() == totalPersons):
         evolution = False
-#    print(sortedChromosomes[0])
-#    print("=====================")
     
     elite = copy.deepcopy(sortedChromosomes)
     elite = elite[0:toCrossover]
@@ -181,29 +179,10 @@ while(evolution):
         
     childs = []
     
-#    print("==========00001============")
-#    for s in range(0, len(sortedChromosomes)):
-#        print(sortedChromosomes[s].fitness())
-    
     for c in range(0, len(elite)-1):
         childs.append(elite[c].crossover(elite[c+1]))
-       
-#    print("==========00002============")
-#    for s in range(0, len(sortedChromosomes)):
-#        print(sortedChromosomes[s].fitness())
     
     for m in range(0, len(worst)):
         worst[m].mutate()
-        
-#    print("==========00003============")
-#    for s in range(0, len(sortedChromosomes)):
-#        print(sortedChromosomes[s].fitness())
-        
+                
     chromosomes = childs + sortedChromosomes + worst
-#    
-#    print("==========00004============")
-#    for s in range(0, len(sortedChromosomes)):
-#        print(sortedChromosomes[s].fitness())
-        
-#    if(count == 1):
-#        evolution = False
