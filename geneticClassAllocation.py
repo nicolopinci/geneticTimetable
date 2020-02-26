@@ -72,68 +72,48 @@ class Chromosome:
         return satisfiedPeople
         
     def crossover(self, otherChromosome):
-    
+        
         firstList = copy.copy(self.roomList)
         secondList = copy.copy(otherChromosome.roomList)
         
-        firstList = sorted(firstList, key=lambda x: x.id, reverse = True)
-        secondList = sorted(secondList, key=lambda x: x.id, reverse = True)
-           
-        # source: https://towardsdatascience.com/evolution-of-a-salesman-a-complete-genetic-algorithm-tutorial-for-python-6fe5d2b3ca35
-    
-        child = []
-        childP0 = []
-        childP1 = []
-        childP2 = []
+        firstList = sorted(firstList, key=lambda x:x.id)
+        secondList = sorted(secondList, key=lambda x:x.id)
         
-        geneA = int(randrange(0, len(firstList)-1))
-        geneB = int(randrange(0, len(secondList)-1))
-        
-        startGene = min(geneA, geneB)
-        endGene = max(geneA, geneB)
-    
-         
-        print("...............::")
-        if(len(firstList) == len(secondList)):
-            print(startGene)
-            print(endGene)
-            print(self)
-            print(otherChromosome)
-            
+        crossedList = []
         addedEvents = []
         
-        for i in range(startGene, endGene):
-            childP1.append(secondList[i])
-            addedEvents.append(secondList[i].currentEvent)
-            
-        for i in range(0, startGene-1):
-            found = False
-            for j in range(0, len(firstList)):
-                if(found == False):
-                    if(firstList[j].currentEvent not in addedEvents):
-                        firstList[i].currentEvent = firstList[j].currentEvent
-                        addedEvents.append(firstList[j].currentEvent)
-                        childP0.append(firstList[j])
-                        found = True
-            
-                  
-        for i in range(endGene+1, len(secondList)):
-            found = False
-            for j in range(0, len(firstList)):
-                if(found == False):
-                    if(firstList[j].currentEvent not in addedEvents):
-                        firstList[i].currentEvent = firstList[j].currentEvent
-                        addedEvents.append(firstList[j].currentEvent)
-                        childP2.append(firstList[j])
-                        found = True
+        for i in range(0, len(firstList)):
+            if((firstList[i].currentEvent not in addedEvents) and (secondList[i].currentEvent not in addedEvents)):
+                casualElement = randrange(0,1)
+                if(casualElement == 0):
+                    crossedList.append(firstList[i])
+                    addedEvents.append(firstList[i].currentEvent)
+                else:
+                    crossedList.append(secondList[i])
+                    addedEvents.append(secondList[i].currentEvent)
+            elif((firstList[i].currentEvent not in addedEvents) or (secondList[i].currentEvent not in addedEvents)):
+                if(firstList[i].currentEvent not in addedEvents):
+                    crossedList.append(firstList[i])
+                    addedEvents.append(firstList[i].currentEvent)
+                else:
+                    crossedList.append(secondList[i])
+                    addedEvents.append(secondList[i].currentEvent)
+            else:
+                j = 0
+                while j<len(firstList):
+                    if(firstList[j] not in addedEvents):
+                        crossedList.append(firstList[j])
+                        addedEvents.add(firstList[j])
+                        j = len(firstList)
+                    elif(secondList[j] not in addedEvents):
+                        crossedList.append(secondList[j])
+                        addedEvents.add(secondList[j])
+                        j = len(firstList)
+                    else:
+                        j = j+1
     
-        child = childP0 + childP1 + childP2
-           
-        newChromosome = Chromosome(child)
-      
-        print(newChromosome)
-        print("::::::::::::::::::::::::")
-        return newChromosome
+        return Chromosome(crossedList)
+                
 
 
     def fillRandom(self, events):
@@ -149,32 +129,8 @@ class Chromosome:
             self.roomList.append(newRoom)
                 
                 
-#        position1 = randrange(0, len(firstList))
-#        position2 = randrange(0, len(secondList))
-#        
-#        element1 = firstList[position1].currentEvent
-#        element2 = secondList[position2].currentEvent
-#        
-#        position3 = 0
-#        position4 = 0
-#        
-#        for a in range(0, len(firstList)):
-#            if(firstList[a] == element2):
-#                position3 = a
-#                
-#        
-#         for b in range(0, len(secondList)):
-#            if(secondList[b] == element1):
-#                position4 = b
-#                
-#        temp = firstList[position1].currentEvent
-#        firstList[position1].currentEvent = secondList[position2].currentEvent
-#        secondList[position2].currentEvent = temp
-#        
-#        temp = firstList[position3].currentEvent
-#        firstList[position3].currentEvent = secondList[position4].currentEvent
-#        secondList[position4].currentEvent = temp
-#        
+
+  
         
 mu = 0.5
 chi = 0.5
