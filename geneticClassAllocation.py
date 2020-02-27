@@ -12,11 +12,12 @@ import random
 import math
 
 class Lecture:
-    def __init__(self, id, description, numberPeople, timeslots):
+    def __init__(self, id, description, numberPeople, timeslots, color):
         self.id = id
         self.description = description
         self.numberPeople = numberPeople
         self.timeslots = timeslots
+        self.color = color
         
     def __str__(self):
         return str(self.id) + " - " + self.description + " - " + str(self.numberPeople) + " people - " + str(self.timeslots) + " timeslots"
@@ -38,6 +39,12 @@ class Event:
         
     def __str__(self):
         return str(self.id) + " - " + self.description + " - " + str(self.numberPeople) + " people, lecture " + str(self.lecture) + ", fragm " + str(self.fragmentNr)
+    
+    def findLecture(self, lectures):
+        for l in lectures:
+            if(l.id == self.lecture):
+                return l
+        return Lecture("","",0,0,"rgb(255,255,255)")
     
 class Room:
     def __init__(self, id, description, capacity, isEmpty):
@@ -188,8 +195,11 @@ chromosomes = []
 
 maxChromosomes = 100
 numberLectures = 10
-availableTimeslots = 24
+availableTimeslots = 10
 numberRooms = numberLectures
+
+totalSatisfied = 0
+totalInvolved = 0
 
 f = open("timetable.html","w")
 f.write("<html>")
@@ -199,8 +209,12 @@ f.write("<body>")
 f.write("<ul>")
 for e in range(0, numberLectures):
     peopleLecture = randrange(1, 100)
-    numberTimeslots = randrange(1, 24)
-    lectures.append(Lecture("LECTURE"+str(e), "", peopleLecture, numberTimeslots))
+    numberTimeslots = randrange(1, 10)
+    red = str(randrange(100, 220))
+    green = str(randrange(100, 220))
+    blue = str(randrange(100, 220))
+    color = "rgb("+red+","+green+","+blue+")"
+    lectures.append(Lecture("LECTURE"+str(e), "", peopleLecture, numberTimeslots, color))
     f.write("<li>" + lectures[e].id + " - " + str(peopleLecture) + " people - " + str(numberTimeslots) + " timeslots</li>")
     allEvents += lectures[e].transformIntoEvents()
 f.write("</ul>")
@@ -215,6 +229,9 @@ for c in range(0, maxChromosomes):
     chromosome = Chromosome([])
     chromosome.setRooms(rooms)
     chromosomes.append(chromosome)
+    
+for l in lectures:
+    totalInvolved += l.numberPeople*l.timeslots
 
 while(currentTS < availableTimeslots):
     
@@ -249,18 +266,25 @@ while(currentTS < availableTimeslots):
             newRoom.isEmpty = False
             rooms.append(newRoom)
         newChromosomes.append(Chromosome(rooms))
-#        currentRoomList = copy.deepcopy(chromosomes[k].roomList)
-#        currentRoomList.
-#        currentChromosome = Chromosome(chromosomes[k].id)
-#        chromosomes[k].fillRandom(events)
+
     chromosomes = newChromosomes
     
     evolution = True
+    
+    numberEquals = 0
+    previousFitness = 0
     
     while(evolution):
         count = count + 1
         sortedChromosomes = sorted(chromosomes, key=lambda x:x.fitness(), reverse = True)
         sortedChromosomes = sortedChromosomes[0:maxChromosomes]
+        
+        if(sortedChromosomes[0].fitness() == previousFitness):
+            numberEquals += 1
+        else:
+            numberEquals = 0
+        
+        previousFitness = sortedChromosomes[0].fitness() 
         
         toMutate = math.floor(mu*len(sortedChromosomes))
         toCrossover = math.floor(chi*len(sortedChromosomes)/2)*2
@@ -268,7 +292,7 @@ while(currentTS < availableTimeslots):
         print("TS " + str(currentTS) + " - Generation " + str(count) + ": " + str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
         print(sortedChromosomes[0])
         
-        if(count == 20 or sortedChromosomes[0].fitness() == totalPersons):
+        if(numberEquals == 20 or sortedChromosomes[0].fitness() == totalPersons):
                         
             timetableChromosome = copy.deepcopy(sortedChromosomes[0])
             timetable.append(timetableChromosome)
@@ -279,7 +303,9 @@ while(currentTS < availableTimeslots):
             for r in range(0, len(sortedChromosomes[0].roomList)):
                 if(sortedChromosomes[0].roomList[r].currentEvent.numberPeople <= sortedChromosomes[0].roomList[r].capacity):
                     bestEvents.append(sortedChromosomes[0].roomList[r].currentEvent)
-                        
+            
+                    totalSatisfied += sortedChromosomes[0].roomList[r].currentEvent.numberPeople
+            
             newAllEvents = []
             for ev in range(0, len(allEvents)):
                 foundEvent = False
@@ -320,16 +346,20 @@ for col in range(0, len(timetable[0].roomList)):
 for row in range(0, len(timetable)):
     f.write("<tr style=\"border: 1px solid black;\">")
     for col in range(0, len(timetable[row].roomList)):
-        f.write("<td style=\"border: 1px solid black; padding: 5px;\">")
+        f.write("<td style=\"border: 1px solid black; padding: 5px; ")
         if(timetable[row].roomList[col].currentEvent.numberPeople <= timetable[row].roomList[col].capacity):
+            f.write("background-color: " + timetable[row].roomList[col].currentEvent.findLecture(lectures).color + ";\">")
             f.write(timetable[row].roomList[col].currentEvent.id)
             f.write("<br/>")
             f.write("<span style=\"font-size: small;\">")
             f.write("(" + str(timetable[row].roomList[col].currentEvent.numberPeople) +" people)")
             f.write("</span>")
+        else:
+            f.write("\">")
         f.write("</td>")
     f.write("</tr>")
 f.write("</table>")
+f.write("There are " + str(totalSatisfied) + " people satisfied on a total of " + str(totalInvolved))
 f.write("</body>")
 f.write("</html>")
 
