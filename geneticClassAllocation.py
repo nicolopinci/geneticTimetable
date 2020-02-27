@@ -11,20 +11,48 @@ import copy
 import random
 import math
 
-class Event:
-    def __init__(self, id, description, numberPeople):
+class Lecture:
+    def __init__(self, id, description, numberPeople, timeslots):
         self.id = id
         self.description = description
         self.numberPeople = numberPeople
+        self.timeslots = timeslots
+        
+    def __str__(self):
+        return str(self.id) + " - " + self.description + " - " + str(self.numberPeople) + " people - " + str(self.timeslots) + " timeslots"
+        
+    def transformIntoEvents(self):
+        eventList = []
+        for i in range(0, self.timeslots):
+            eventList.append(Event(str(self.id) + "_" + str(i), self.description, self.numberPeople, i, self.id))
+            
+        return eventList
+    
+class Event:
+    def __init__(self, id, description, numberPeople, fragmentNr, lecture):
+        self.id = id
+        self.description = description
+        self.numberPeople = numberPeople
+        self.fragmentNr = fragmentNr
+        self.lecture = lecture
+        
+    def __str__(self):
+        return str(self.id) + " - " + self.description + " - " + str(self.numberPeople) + " people, lecture " + str(self.lecture) + ", fragm " + str(self.fragmentNr)
     
 class Room:
     def __init__(self, id, description, capacity, isEmpty):
         self.id = id
         self.description = description
         self.isEmpty = isEmpty
-        self.currentEvent = Event(0, "", 0)
+        self.currentEvent = Event("", "", 0, 0, "")
         self.capacity = capacity
-    
+        
+    def fillRandom(self, number):
+        self.id = "ROOM"+str(number)
+        self.description = ""
+        self.capacity = randrange(1, 100)
+        self.isEmpty = True
+
 class Chromosome:
     def __init__(self, roomList):
         self.roomList = roomList
@@ -116,73 +144,193 @@ class Chromosome:
                         j = j+1
     
         return Chromosome(crossedList)
-                
-
-
-    def fillRandom(self, events):
-        listLength = len(events)
-        permutation = list(range(listLength))
-        permutation = random.sample(permutation, len(permutation))
         
-        for p in range(0, len(permutation)):
-            newRoom = Room("ROOM"+str(p), "", randrange(1, 100), True)
-            newRoom.currentEvent = events[permutation[p]]
-            newRoom.isEmpty = False
-            
-            self.roomList.append(newRoom)
+    def setRooms(self, rooms):
+        self.roomList = copy.deepcopy(rooms)
+        
+#    def fillRandom(self, inEvents):
+#        
+#        events = copy.deepcopy(inEvents)
+#        
+#        listLength = len(events)
+#        permutation = list(range(listLength))
+#        permutation = random.sample(permutation, len(permutation))
+#        
+#        for r in range(0, len(self.roomList)):
+#            self.roomList[r].currentEvent = events[permutation[r]]
+#            self.roomList[r].isEmpty = False
                 
                 
 
-  
+def generateEvents(inEvents, roomList):
+        
+    outEvents = []
+    
+    events = copy.deepcopy(inEvents)
+    
+    listLength = len(events)
+    permutation = list(range(listLength))
+    permutation = random.sample(permutation, len(permutation))
+    
+    for r in range(0, len(roomList)):
+        outEvents.append(events[permutation[r]])
+    
+    return outEvents
         
 mu = 0.2
 chi = 0.5
 
 rooms = []
-events = []
+allEvents = []
+lectures = []
+timetable = []
 chromosomes = []
 
-totalPersons = 0
-count = 0
 maxChromosomes = 100
-numberEvents = 30
+numberLectures = 10
+availableTimeslots = 24
+numberRooms = numberLectures
 
-for e in range(0, numberEvents):
-    peopleEvent = randrange(1, 100)
-    events.append(Event("EVENT"+str(e), "", peopleEvent))
-    totalPersons += peopleEvent
+f = open("timetable.html","w")
+f.write("<html>")
+f.write("<head>")
+f.write("</head>")
+f.write("<body>")
+f.write("<ul>")
+for e in range(0, numberLectures):
+    peopleLecture = randrange(1, 100)
+    numberTimeslots = randrange(1, 24)
+    lectures.append(Lecture("LECTURE"+str(e), "", peopleLecture, numberTimeslots))
+    f.write("<li>" + lectures[e].id + " - " + str(peopleLecture) + " people - " + str(numberTimeslots) + " timeslots</li>")
+    allEvents += lectures[e].transformIntoEvents()
+f.write("</ul>")
+currentTS = 0
 
-for k in range(0, maxChromosomes):
-    chromosomes.append(Chromosome([]))
-    chromosomes[k].fillRandom(events)
- 
+for r in range(0, numberRooms):
+    room = Room("","",0,True)
+    room.fillRandom(r)
+    rooms.append(copy.deepcopy(room))
     
-evolution = True
+for c in range(0, maxChromosomes):
+    chromosome = Chromosome([])
+    chromosome.setRooms(rooms)
+    chromosomes.append(chromosome)
 
-while(evolution):
-    count = count + 1
-    sortedChromosomes = sorted(chromosomes, key=lambda x:x.fitness(), reverse = True)
-    sortedChromosomes = sortedChromosomes[0:maxChromosomes]
+while(currentTS < availableTimeslots):
     
-    toMutate = math.floor(mu*len(sortedChromosomes))
-    toCrossover = math.floor(chi*len(sortedChromosomes)/2)*2
-
-    print("Generation " + str(count) + ": " + str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
-    print(sortedChromosomes[0])
+    currentTS += 1
     
-    if(sortedChromosomes[0].fitness() == totalPersons):
-        evolution = False
+    events = []
+    totalPersons = 0
+    count = 0
     
-    elite = copy.deepcopy(sortedChromosomes)
-    elite = elite[0:toCrossover]
-    worst = copy.deepcopy(sortedChromosomes[(len(sortedChromosomes) - toMutate):])
+    
+    for l in range(0, len(lectures)):
+        minFragment = float('inf')
+        minEvent = Event("","",0,0,"")
         
-    childs = []
+        for e in range(0, len(allEvents)):
+            if(lectures[l].id == allEvents[e].lecture): 
+                if(allEvents[e].fragmentNr < minFragment):
+                    minFragment = allEvents[e].fragmentNr
+                    minEvent = copy.deepcopy(allEvents[e])
+        events.append(minEvent)
+        totalPersons += minEvent.numberPeople
     
-    for c in range(0, len(elite)-1):
-        childs.append(elite[c].crossover(elite[c+1]))
+
+    newChromosomes = []
     
-    for m in range(0, len(worst)):
-        worst[m].mutate()
-                
-    chromosomes = childs + sortedChromosomes + worst
+    for k in range(0, maxChromosomes):
+        permutatedEvents = generateEvents(events, rooms)
+        rooms = []
+        for r in range(0,len(chromosomes[k].roomList)):
+            newRoom = copy.deepcopy(chromosomes[k].roomList[r])
+            newRoom.currentEvent = permutatedEvents[r]
+            newRoom.isEmpty = False
+            rooms.append(newRoom)
+        newChromosomes.append(Chromosome(rooms))
+#        currentRoomList = copy.deepcopy(chromosomes[k].roomList)
+#        currentRoomList.
+#        currentChromosome = Chromosome(chromosomes[k].id)
+#        chromosomes[k].fillRandom(events)
+    chromosomes = newChromosomes
+    
+    evolution = True
+    
+    while(evolution):
+        count = count + 1
+        sortedChromosomes = sorted(chromosomes, key=lambda x:x.fitness(), reverse = True)
+        sortedChromosomes = sortedChromosomes[0:maxChromosomes]
+        
+        toMutate = math.floor(mu*len(sortedChromosomes))
+        toCrossover = math.floor(chi*len(sortedChromosomes)/2)*2
+    
+        print("TS " + str(currentTS) + " - Generation " + str(count) + ": " + str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
+        print(sortedChromosomes[0])
+        
+        if(count == 20 or sortedChromosomes[0].fitness() == totalPersons):
+                        
+            timetableChromosome = copy.deepcopy(sortedChromosomes[0])
+            timetable.append(timetableChromosome)
+            evolution = False
+            
+            bestEvents = []
+                        
+            for r in range(0, len(sortedChromosomes[0].roomList)):
+                if(sortedChromosomes[0].roomList[r].currentEvent.numberPeople <= sortedChromosomes[0].roomList[r].capacity):
+                    bestEvents.append(sortedChromosomes[0].roomList[r].currentEvent)
+                        
+            newAllEvents = []
+            for ev in range(0, len(allEvents)):
+                foundEvent = False
+                for be in range(0, len(bestEvents)):
+                    if(allEvents[ev].id == bestEvents[be].id):
+                        foundEvent = True
+                if(foundEvent == False):
+                    newAllEvents.append(allEvents[ev])
+                    
+            allEvents = newAllEvents
+                        
+        elite = copy.deepcopy(sortedChromosomes)
+        elite = elite[0:toCrossover]
+        worst = copy.deepcopy(sortedChromosomes[(len(sortedChromosomes) - toMutate):])
+            
+        childs = []
+        
+        for c in range(0, len(elite)-1):
+            childs.append(elite[c].crossover(elite[c+1]))
+        
+        for m in range(0, len(worst)):
+            worst[m].mutate()
+                    
+        chromosomes = childs + sortedChromosomes + worst
+        
+
+f.write("<table style=\"border-collapse: collapse; border: 1px solid black;\">")
+
+for col in range(0, len(timetable[0].roomList)):
+   f.write("<th style=\"border: 1px solid black; padding: 5px;\">")
+   f.write(timetable[0].roomList[col].id)
+   f.write("<br/>")
+   f.write("<span style=\"font-size: small;\">")
+   f.write("(max " + str(timetable[0].roomList[col].capacity) +" people)")
+   f.write("</span>")
+   f.write("</th>")
+        
+for row in range(0, len(timetable)):
+    f.write("<tr style=\"border: 1px solid black;\">")
+    for col in range(0, len(timetable[row].roomList)):
+        f.write("<td style=\"border: 1px solid black; padding: 5px;\">")
+        if(timetable[row].roomList[col].currentEvent.numberPeople <= timetable[row].roomList[col].capacity):
+            f.write(timetable[row].roomList[col].currentEvent.id)
+            f.write("<br/>")
+            f.write("<span style=\"font-size: small;\">")
+            f.write("(" + str(timetable[row].roomList[col].currentEvent.numberPeople) +" people)")
+            f.write("</span>")
+        f.write("</td>")
+    f.write("</tr>")
+f.write("</table>")
+f.write("</body>")
+f.write("</html>")
+
+f.close()
