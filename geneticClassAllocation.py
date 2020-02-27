@@ -194,9 +194,9 @@ timetable = []
 chromosomes = []
 
 maxChromosomes = 100
-numberLectures = 30
-availableTimeslots = 24
-numberRooms = numberLectures
+numberLectures = 20
+availableTimeslots = 10
+numberRooms = 10
 
 totalSatisfied = 0
 totalInvolved = 0
