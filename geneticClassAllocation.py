@@ -194,9 +194,9 @@ timetable = []
 chromosomes = []
 
 maxChromosomes = 100
-numberLectures = 20
-availableTimeslots = 10
-numberRooms = 10
+numberLectures = 100
+availableTimeslots = 6
+numberRooms = 100
 
 totalSatisfied = 0
 totalInvolved = 0
@@ -292,7 +292,7 @@ while(currentTS < availableTimeslots):
         print("TS " + str(currentTS) + " - Generation " + str(count) + ": " + str(sortedChromosomes[0].fitness()) + " on " + str(totalPersons))
         print(sortedChromosomes[0])
         
-        if(numberEquals == 20 or sortedChromosomes[0].fitness() == totalPersons):
+        if(numberEquals == 5 or sortedChromosomes[0].fitness() == totalPersons):
                         
             timetableChromosome = copy.deepcopy(sortedChromosomes[0])
             timetable.append(timetableChromosome)
